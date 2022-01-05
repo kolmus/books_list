@@ -1,0 +1,39 @@
+{% extends 'manager_app/base.html' %}
+{% block content %}
+    <div id="search_bar">
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name='search'>
+            <input type="date" name="date_from">
+            <input type='date' name='date_to'>
+            <button type="submit">Wyszukaj</button>
+        </form>
+    </div>
+
+    <table>
+        <thead>
+            <th>Lp.</th>
+            <th>Tytuł</th>
+            <th>Autor</th>
+            <th>Data Publikacji</th>
+            <th>ISBN</th>
+            <th>Ilość stron</th>
+            <th>Okładka</th>
+            <th>Język</th>
+        </thead>
+        <tbody>
+            {% for book in books %}
+            <tr>
+                <td>{{ book.id }}</td>
+                <td>{{ book.title }}</td>
+                <td>{{ book.author }}</td>
+                <td>{{ book.date_of_publication }}</td>
+                <td>{{ book.isbn }}</td>
+                <td>{{ book.pages }}</td>
+                <td>{{ book.cover }}</td>
+                <td>{{ book.lang }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

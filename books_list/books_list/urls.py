@@ -15,7 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from manager_app.views import (
+    BooksListView,
+    
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('books/list/', BooksListView.as_view()),
+    
+    
 ]
