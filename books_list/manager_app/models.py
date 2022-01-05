@@ -6,7 +6,7 @@ class Book(models.Model):
     date_of_publication = models.DateField(verbose_name='Data publikacji')
     isbn = models.BigIntegerField(verbose_name='ISBN')
     pages = models.IntegerField(verbose_name='Liczba stron')
-    cover = models.ImageField(upload_to='covers/', verbose_name='Okładka')
+    cover = models.ImageField(upload_to='covers/', verbose_name='Okładka', null=True)
     lang = models.CharField(max_length=32, verbose_name='Język publikacji')
     
     def __str__(self):

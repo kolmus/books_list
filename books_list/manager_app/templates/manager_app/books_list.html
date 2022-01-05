@@ -12,7 +12,6 @@
 
     <table>
         <thead>
-            <th>Lp.</th>
             <th>Tytuł</th>
             <th>Autor</th>
             <th>Data Publikacji</th>
@@ -20,11 +19,11 @@
             <th>Ilość stron</th>
             <th>Okładka</th>
             <th>Język</th>
+            <th></th>
         </thead>
         <tbody>
             {% for book in books %}
             <tr>
-                <td>{{ book.id }}</td>
                 <td>{{ book.title }}</td>
                 <td>{{ book.author }}</td>
                 <td>{{ book.date_of_publication }}</td>
@@ -32,6 +31,7 @@
                 <td>{{ book.pages }}</td>
                 <td>{{ book.cover }}</td>
                 <td>{{ book.lang }}</td>
+                <td><a href="/books/edit/{{book.id}}/"><button type="button">Edytuj</button></a></td>
             </tr>
             {% endfor %}
         </tbody>

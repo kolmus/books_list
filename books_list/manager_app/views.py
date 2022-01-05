@@ -1,7 +1,12 @@
 from django.shortcuts import render
 from django.views import View
+from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteView
+
+import requests
+from requests.sessions import Request
 
 from .models import Book
+from .forms import GoogleApiForm
 
 # Create your views here.
 class BooksListView(View):
@@ -62,6 +67,92 @@ class BooksListView(View):
         else:                                  # if no date and no search
             result = books
         return render(request, 'manager_app/books_list.html', {"books": result})
-        
 
 
+class BookCreateView(CreateView):
+    """Generic view to create new book
+
+    """
+    model = Book
+    fields = '__all__'
+    success_url = '/books/list/'
+
+
+class BookUpdateView(UpdateView):
+    """Generic view to update book
+
+    Args:
+        pk (int): id of book
+    """    
+    model = Book
+    fields = '__all__'
+    success_url = '/books/list/'
+
+
+class BookImportView(View):
+    def get(self, request):
+        form = GoogleApiForm()
+        return render(request, 'manager_app/books_import.html', {'form': form})
+    
+    def post(self, request):
+        from books_list.local_settings import GOOGLE_API_KEY
+        form = GoogleApiForm(request.POST)
+        if form.is_valid():
+            title = form.cleaned_data['title']
+            author = form.cleaned_data['author']
+            title_new = title.replace(" ", "+")
+            author_new = author.replace(" ", "+")
+            response = requests.get(f'https://www.googleapis.com/books/v1/volumes?q={title_new}+inauthor:{author_new}&key={GOOGLE_API_KEY}')
+            response.raise_for_status()
+            if response.status_code == 200:
+                answer = response.json()['items'][0][title]
+            else: 
+                answer = 'not working'
+            return render(request, 'manager_app/books_import.html', {'form': form, "answer": answer} )
+
+
+"""
+200 OK
+
+{
+    "kind": "books#volumes",
+    "items": [
+        {
+            "kind": "books#volume",
+            "id": "_ojXNuzgHRcC",
+            "etag": "OTD2tB19qn4",
+            "selfLink": "https://www.googleapis.com/books/v1/volumes/_ojXNuzgHRcC",
+            "volumeInfo": {
+            "title": "Flowers",
+            "authors": [
+                "Vijaya Khisty Bodach"
+            ],
+        ...
+        },
+        {
+        "kind": "books#volume",
+        "id": "RJxWIQOvoZUC",
+        "etag": "NsxMT6kCCVs",
+        "selfLink": "https://www.googleapis.com/books/v1/volumes/RJxWIQOvoZUC",
+        "volumeInfo": {
+            "title": "Flowers",
+            "authors": [
+                "Gail Saunders-Smith"
+            ],
+            ...
+        },
+        {
+        "kind": "books#volume",
+        "id": "zaRoX10_UsMC",
+        "etag": "pm1sLMgKfMA",
+        "selfLink": "https://www.googleapis.com/books/v1/volumes/zaRoX10_UsMC",
+        "volumeInfo": {
+            "title": "Flowers",
+            "authors": [
+                "Paul McEvoy"
+            ],
+            ...
+        },
+        "totalItems": 3
+}
+"""
