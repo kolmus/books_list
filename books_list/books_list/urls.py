@@ -19,6 +19,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from manager_app.views import (
+    BookSearchApiView,
     BookSaveAll,
     BookSaveView,
     BooksListView,
@@ -34,5 +35,8 @@ urlpatterns = [
     path('books/add/', BookCreateView.as_view()),
     path('books/import/', BookImportView.as_view()),
     path('books/save/', BookSaveView.as_view()),
-    path('books/save/all/', BookSaveAll.as_view())
+    path('books/save/all/', BookSaveAll.as_view()),
+    path('books/api/', BookSearchApiView.as_view()),
+    
+    
 ]

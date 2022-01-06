@@ -9,7 +9,7 @@
             <button type="submit">Wyszukaj</button>
         </form>
     </div>
-
+    {% if books %}
     <table>
         <thead>
             <th>Tytuł</th>
@@ -36,4 +36,7 @@
             {% endfor %}
         </tbody>
     </table>
+    {% else %}
+    <h3>Brak wyników w bazie</h3>
+    {% endif %}
 {% endblock %}

@@ -1,74 +1,108 @@
 from functools import lru_cache
+from re import S
 from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteView
 from django.core.exceptions import ValidationError
+from django.http import Http404
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 import requests
 from requests.sessions import Request, session
 
 from .models import Book
 from .forms import GoogleApiForm
+from .serializers import BookListSerializer, BookSerializer
 
-# Create your views here.
+
+def book_search(search, date_from, date_to, books):
+    """ Function help to filter database with several args
+    Checking if str icontains in title, author or language, 
+    
+    Checking if publication date is betweerg arguments
+    Args:
+        search (str): for fields filtering. 
+        date_from (str): date in format "YYYY-MM-DD"
+        date_to (str): date in format "YYYY-MM-DD"
+        books (queryset): checked set of data
+
+    Returns:
+        [queryset]: objects of Book model
+    """    
+    result_search = []
+
+    if search:       # filter by title, author and language
+        for book in books:
+            if book in books.filter(title__icontains=search):
+                result_search.append(book.id)
+            if book in books.filter(author__icontains=search):
+                result_search.append(book.id)
+            if book in books.filter(lang__icontains=search):
+                result_search.append(book.id)
+
+
+
+    result_date = []
+    if date_from and date_to:       # filter by date
+        books_pub_to = books.filter(date_of_publication__lte=date_to)
+        for book in books_pub_to.filter(date_of_publication__gte=date_from):
+            result_date.append(book.id)
+    elif date_from:
+        for book in books.filter(date_of_publication__gte=date_from):
+            result_date.append(book.id)
+    elif date_to:
+        for book in books.filter(date_of_publication__lte=date_to):
+            result_date.append(book.id)
+    
+    if result_search:
+        if result_date:
+            result_ids = []                 #if search and date check for both results 
+            for i in result_date:
+                if i in result_search:
+                    result_ids.append(i)
+        else:
+            result_ids = result_search         # if no date and search
+    elif result_date:                      # if no search and date
+        result_ids = result_date
+    else:                                  # if no date and no search
+        result_ids = []
+    result = books.filter(id__in=result_ids)
+    return result
+
+
 class BooksListView(View):
     def get(self, request):
         """View to list all books 
 
         Returns:
             books [queryset]: all books in DB
-        """        
+        """
         books = Book.objects.all().order_by('id')
-        return render(request, 'manager_app/books_list.html', {'books': books})
+        
+        if books.exists():
+            return render(request, 'manager_app/books_list.html', {'books': books})
+        else:
+            return render(request, 'manager_app/books_list.html')
     
     def post(self, request):
-        """Viev to filter bay title, author, language or date of publiation
+        """View to filter by title, author, language or date of publication
 
         Returns:
-            books: queryset of all books if exeptions or empty fields
-            books: list with object => result of filtering
+            books: Queryset => result of filtering
             
         """        
         search = request.POST['search']
         date_from = request.POST['date_from']
         date_to = request.POST['date_to']
         books = Book.objects.all().order_by('id')
-        result_search = []
-
-        if search:       # filter by title, author and language
-            for book in books:
-                if book in books.filter(title__icontains=search):
-                    result_search.append(book)
-                if book in books.filter(author__icontains=search):
-                    result_search.append(book)
-                if book in books.filter(lang__icontains=search):
-                    result_search.append(book)
-
-        result_date = []
-        if date_from and date_to:       # filter by date
-            books_pub_to = books.filter(date_of_publication__lte=date_to)
-            for book in books_pub_to.filter(date_of_publication__gte=date_from):
-                result_date.append(book)
-        elif date_from:
-            for book in books.filter(date_of_publication__gte=date_from):
-                result_date.append(book)
-        elif date_to:
-            for book in books.filter(date_of_publication__lte=date_to):
-                result_date.append(book)
-        
-        if result_search:
-            if result_date:
-                result = []                 #if search and date check for both results 
-                for i in result_date:
-                    if i in result_search:
-                        result.append(i)
-            else:
-                result = result_search         # if no date and search
-        elif result_date:                      # if no search and date
-            result = result_date
-        else:                                  # if no date and no search
-            result = books
-        return render(request, 'manager_app/books_list.html', {"books": result})
+        if books.exists():
+            result = book_search(search, date_from, date_to, books)
+            # books = Book.objects.filter(title__icontains=search, )
+            return render(request, 'manager_app/books_list.html', {"books": result})
+        else: 
+            return render(request, 'manager_app/books_list.html')
 
 
 class BookCreateView(CreateView):
@@ -209,14 +243,10 @@ class BookSaveAll(View):
     saves all improrted books in database
     """
     def post(self, request):
-        """
-        Saves in database all imported books
-        """
         try:
             books = request.session['imported_books']
         except KeyError:
             return redirect('/books/import/')
-        print(Book.objects.all().count())
         for book in books:
             new_book = Book()
             new_book.title = book['title']
@@ -244,7 +274,27 @@ class BookSaveAll(View):
             del request.session['imported_books']
         except KeyError:
             pass
-        print(Book.objects.all().count())
         return redirect('/books/import/')
 
 
+class BookSearchApiView(APIView):
+    """APIView to filter by title, author, language or date of publication
+
+        Returns:
+            result: queryset => result of filtering
+    """
+    def get(self, request, format=None):
+        books = Book.objects.all()
+        serializer = BookListSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            search = serializer.validated_data['search']
+            date_from = serializer.validated_data['date_from']
+            date_to = serializer.validated_data['date_to']
+            
+        result = book_search(search=search, date_to=date_to, date_from=date_from, books=books)
+        serializer2 = BookSerializer(result, {"request": request})
+        if result.exists():
+            return Response(serializer2.data)
+        else:
+            raise Http404

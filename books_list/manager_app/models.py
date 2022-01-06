@@ -10,4 +10,4 @@ class Book(models.Model):
     lang = models.CharField(max_length=32, verbose_name='Język publikacji')
     
     def __str__(self):
-        return f'{self.title} - {self.author} ({self.date_of_puclication})'
+        return f'{self.title} - {self.author} ({self.date_of_publication})'
