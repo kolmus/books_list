@@ -10,8 +10,11 @@
 <body>
     <header>
         <h1>Zarządzanie zbiorem książek</h1>
-
+        
     </header>
+    {% if err %}
+        {{ err }}
+    {% endif %}
     {% block content %}{% endblock %}
     <footer>
         Created by Łukasz Kolmus

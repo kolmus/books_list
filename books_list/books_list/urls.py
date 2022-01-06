@@ -19,6 +19,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from manager_app.views import (
+    BookSaveAll,
+    BookSaveView,
     BooksListView,
     BookUpdateView,
     BookCreateView,
@@ -31,9 +33,6 @@ urlpatterns = [
     path('books/edit/<int:pk>/', BookUpdateView.as_view()),
     path('books/add/', BookCreateView.as_view()),
     path('books/import/', BookImportView.as_view()),
-    
-    
+    path('books/save/', BookSaveView.as_view()),
+    path('books/save/all/', BookSaveAll.as_view())
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

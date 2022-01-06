@@ -4,8 +4,46 @@
         <fieldset>
             {% csrf_token %}
             {{ form }}
-            <input type="submit" value="Zapisz">
+            <input type="submit" value="imoportuj z Google Books">
         </fieldset>
     </form>
-    <h3>{{ answer }}</h3>
+    {% if answer %}
+        <table>
+            <thead>
+                <th>Tytuł</th>
+                <th>Autor</th>
+                <th>Data Publikacji</th>
+                <th>ISBN</th>
+                <th>Ilość stron</th>
+                <th>Okładka</th>
+                <th>Język</th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for book in answer %}
+                <tr>
+                    <td>{{ book.title }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>{{ book.date_of_publication }}</td>
+                    <td>{{ book.isbn }}</td>
+                    <td>{{ book.pages }}</td>
+                    <td>{{ book.cover }}</td>
+                    <td>{{ book.lang }}</td>
+                    <td>
+                        <form method="post" action='/books/save/'>
+                            {% csrf_token %}
+                            <input type="hidden" name ="lp" value="{{book.lp}}">
+                            <button type="submit">zapisz w bazie</button>
+                        </form>
+                    </td>
+                    <!-- <td><a href="/books/edit/{{book.id}}/"><button type="button">Edytuj</button></a></td> -->
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <form method="post" action='/books/save/all/'>
+            {% csrf_token %}
+            <button type="submit">zapisz wszystkie w bazie</button>
+        </form>
+    {% endif %}
 {% endblock %}

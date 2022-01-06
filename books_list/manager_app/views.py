@@ -1,9 +1,11 @@
-from django.shortcuts import render
+from functools import lru_cache
+from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteView
+from django.core.exceptions import ValidationError
 
 import requests
-from requests.sessions import Request
+from requests.sessions import Request, session
 
 from .models import Book
 from .forms import GoogleApiForm
@@ -91,10 +93,25 @@ class BookUpdateView(UpdateView):
 
 class BookImportView(View):
     def get(self, request):
+        """listing las imported books and alows to import other books
+
+        Returns:
+            form: needed to create request
+            answer: list of books(dictionaries) with last response 
+        """        
         form = GoogleApiForm()
-        return render(request, 'manager_app/books_import.html', {'form': form})
+        try:
+            answer = request.session['imported_books']
+            return render(request, 'manager_app/books_import.html', {'form': form, "answer": answer})
+        except KeyError:
+            return render(request, 'manager_app/books_import.html', {'form': form})
     
     def post(self, request):
+        """Makes fetch to Googele Books API, 
+        saves needed data in users cache in session, 
+        redirects (GET)to import page
+
+        """        
         from books_list.local_settings import GOOGLE_API_KEY
         form = GoogleApiForm(request.POST)
         if form.is_valid():
@@ -104,55 +121,130 @@ class BookImportView(View):
             author_new = author.replace(" ", "+")
             response = requests.get(f'https://www.googleapis.com/books/v1/volumes?q={title_new}+inauthor:{author_new}&key={GOOGLE_API_KEY}')
             response.raise_for_status()
+            
             if response.status_code == 200:
-                answer = response.json()['items'][0][title]
-            else: 
-                answer = 'not working'
-            return render(request, 'manager_app/books_import.html', {'form': form, "answer": answer} )
+                answer = response.json()['items']
+                
+                list_of_books = []
+                for i in range(len(answer)):
+                    print(i)
+                    print(answer[i]['volumeInfo'])
+                    book = {}
+                    book['lp'] = i
+                    book['title'] = answer[i]['volumeInfo']['title']
+                    book['author'] = ", ".join(answer[i]['volumeInfo']['authors'])
+                    try:
+                        date_publ = answer[i]['volumeInfo']['publishedDate']
+                        if len(date_publ) == 4:
+                            book['date_of_publication'] = date_publ + '-01-01'
+                        else:
+                            book['date_of_publication'] = date_publ
+                    except KeyError:
+                        pass
+                    print(answer[i]['volumeInfo']['industryIdentifiers'][0]['identifier'])
+                    book['isbn'] = answer[i]['volumeInfo']['industryIdentifiers'][0]['identifier']
+                    try: 
+                        book['pages'] = answer[i]['volumeInfo']['pageCount']
+                    except KeyError:
+                        pass
+                    try:
+                        book['cover'] = answer[i]['volumeInfo']['imageLinks']['thumbnail']
+                    except KeyError:
+                        pass
+                    book['lang'] = answer[i]['volumeInfo']['language']
+                    list_of_books.append(book)
+            request.session['imported_books'] = list_of_books
+            ### to write exeptions
+            return redirect('/books/import/')
 
 
-"""
-200 OK
+class BookSaveView(View):
+    """
+        Saves new 1 Book from cache data
+    """    
+    def post(self, request):
+        lp = request.POST['lp']
+        
+        try:
+            books = request.session['imported_books']
+        except KeyError:
+            return redirect('/books/import/')
+        
+        new_books = []
+        for i in range(len(books)):
+            book=books[i]
+            if book['lp'] == int(lp):
+                print(book)
+                new_book = Book()
+                new_book.title = book['title']
+                new_book.author = book['author']
+                new_book.isbn = book['isbn']
+                try:
+                    new_book.pages = int(book['pages'])
+                except KeyError:
+                    pass
+                try:
+                    new_book.cover = book['cover']
+                except KeyError:
+                    pass
+                new_book.lang = book['lang']
+                new_book.save()
+                try:
+                    new_book.date_of_publication = book['date_of_publication']
+                    new_book.save()
+                except KeyError:
+                    pass
+                except ValidationError:
+                    pass
+                continue
+            new_books.append(books[i])
+        request.session['imported_books'] = new_books
+        
+        # book = for position in books:
+#@lru_cache
 
-{
-    "kind": "books#volumes",
-    "items": [
-        {
-            "kind": "books#volume",
-            "id": "_ojXNuzgHRcC",
-            "etag": "OTD2tB19qn4",
-            "selfLink": "https://www.googleapis.com/books/v1/volumes/_ojXNuzgHRcC",
-            "volumeInfo": {
-            "title": "Flowers",
-            "authors": [
-                "Vijaya Khisty Bodach"
-            ],
-        ...
-        },
-        {
-        "kind": "books#volume",
-        "id": "RJxWIQOvoZUC",
-        "etag": "NsxMT6kCCVs",
-        "selfLink": "https://www.googleapis.com/books/v1/volumes/RJxWIQOvoZUC",
-        "volumeInfo": {
-            "title": "Flowers",
-            "authors": [
-                "Gail Saunders-Smith"
-            ],
-            ...
-        },
-        {
-        "kind": "books#volume",
-        "id": "zaRoX10_UsMC",
-        "etag": "pm1sLMgKfMA",
-        "selfLink": "https://www.googleapis.com/books/v1/volumes/zaRoX10_UsMC",
-        "volumeInfo": {
-            "title": "Flowers",
-            "authors": [
-                "Paul McEvoy"
-            ],
-            ...
-        },
-        "totalItems": 3
-}
-"""
+
+class BookSaveAll(View):
+    """
+    saves all improrted books in database
+    """
+    def post(self, request):
+        """
+        Saves in database all imported books
+        """
+        try:
+            books = request.session['imported_books']
+        except KeyError:
+            return redirect('/books/import/')
+        print(Book.objects.all().count())
+        for book in books:
+            new_book = Book()
+            new_book.title = book['title']
+            new_book.author = book['author']
+            new_book.isbn = book['isbn']
+            new_book.lang = book['lang']
+            new_book.save()
+            
+            try:
+                new_book.pages = int(book['pages'])
+            except KeyError:
+                pass
+            try:
+                new_book.cover = book['cover']
+            except KeyError:
+                pass
+            try:
+                new_book.date_of_publication = book['date_of_publication']
+                new_book.save()
+            except KeyError:
+                pass
+            except ValidationError:
+                pass
+        try:
+            del request.session['imported_books']
+        except KeyError:
+            pass
+        print(Book.objects.all().count())
+        return redirect('/books/import/')
+
+

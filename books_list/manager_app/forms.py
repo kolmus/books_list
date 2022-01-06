@@ -11,3 +11,4 @@ class GoogleApiForm(forms.Form):
         if not title and not author:
             raise forms.ValidationError('Przynajmniej jedno pole musi być wypełnione')
         return cleaned_data
+
