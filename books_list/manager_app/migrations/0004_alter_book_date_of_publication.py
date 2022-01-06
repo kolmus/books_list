@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('manager_app', '0003_alter_book_cover_alter_book_pages'),
+        ("manager_app", "0003_alter_book_cover_alter_book_pages"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='book',
-            name='date_of_publication',
-            field=models.DateField(null=True, verbose_name='Data publikacji'),
+            model_name="book",
+            name="date_of_publication",
+            field=models.DateField(null=True, verbose_name="Data publikacji"),
         ),
     ]

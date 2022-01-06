@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('manager_app', '0002_rename_date_of_puclication_book_date_of_publication'),
+        ("manager_app", "0002_rename_date_of_puclication_book_date_of_publication"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='book',
-            name='cover',
-            field=models.ImageField(null=True, upload_to='covers/', verbose_name='Okładka'),
+            model_name="book",
+            name="cover",
+            field=models.ImageField(null=True, upload_to="covers/", verbose_name="Okładka"),
         ),
         migrations.AlterField(
-            model_name='book',
-            name='pages',
-            field=models.IntegerField(null=True, verbose_name='Liczba stron'),
+            model_name="book",
+            name="pages",
+            field=models.IntegerField(null=True, verbose_name="Liczba stron"),
         ),
     ]

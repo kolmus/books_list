@@ -15,28 +15,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from django.conf import settings
-from django.conf.urls.static import static
 
-from manager_app.views import (
-    BookSearchApiView,
-    BookSaveAll,
-    BookSaveView,
-    BooksListView,
-    BookUpdateView,
-    BookCreateView,
-    BookImportView
-)
+from manager_app.views import BookSearchApiView, BookSaveAll, BookSaveView, BooksListView, BookUpdateView, BookCreateView, BookImportView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('books/list/', BooksListView.as_view()),
-    path('books/edit/<int:pk>/', BookUpdateView.as_view()),
-    path('books/add/', BookCreateView.as_view()),
-    path('books/import/', BookImportView.as_view()),
-    path('books/save/', BookSaveView.as_view()),
-    path('books/save/all/', BookSaveAll.as_view()),
-    path('books/api/', BookSearchApiView.as_view()),
-    
-    
+    path("admin/", admin.site.urls),
+    path("books/list/", BooksListView.as_view()),
+    path("books/edit/<int:pk>/", BookUpdateView.as_view()),
+    path("books/add/", BookCreateView.as_view()),
+    path("books/import/", BookImportView.as_view()),
+    path("books/save/", BookSaveView.as_view()),
+    path("books/save/all/", BookSaveAll.as_view()),
+    path("books/api/", BookSearchApiView.as_view()),
 ]
