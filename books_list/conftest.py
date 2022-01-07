@@ -13,3 +13,16 @@ def client():
 def set_up():
     for i in range(15):
         create_fake_book()
+
+
+@pytest.fixture
+def set_up2():
+    client = APIClient()
+
+    import_data = {
+        "title": "ogniem",
+        "author": "sienkiewicz",
+    }
+    response = client.post("/books/import/", import_data)
+
+    return response
