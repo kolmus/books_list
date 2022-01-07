@@ -6,6 +6,7 @@ from django.http import Http404
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
 
 import requests
 
@@ -14,7 +15,7 @@ from .forms import GoogleApiForm
 from .serializers import BookListSerializer, BookSerializer
 
 
-def book_search(search, date_from, date_to, books):
+def book_search(books, search="", date_from="", date_to=""):
     """Function help to filter database with several args
     Checking if str icontains in title, author or language,
 
@@ -95,7 +96,9 @@ class BooksListView(View):
             result = book_search(search, date_from, date_to, books)
             # books = Book.objects.filter(title__icontains=search, )
             return render(request, "manager_app/books_list.html", {"books": result})
-        else:
+        else:  # response = client.get("/books/api/a/1900-01-01/2021-01-07/", {}, format='json')
+            # print(response.content)
+            # assert response.status_code == 200
             return render(request, "manager_app/books_list.html")
 
 
@@ -279,18 +282,27 @@ class BookSearchApiView(APIView):
         result: queryset => result of filtering
     """
 
-    def get(self, request, format=None):
+    def post(self, request, format=None):
         books = Book.objects.all()
         serializer = BookListSerializer(data=request.data)
-
         if serializer.is_valid():
-            search = serializer.validated_data["search"]
-            date_from = serializer.validated_data["date_from"]
-            date_to = serializer.validated_data["date_to"]
+            try:
+                search = serializer.data["search"]
+            except KeyError:
+                search = ""
+            try:
+                date_from = serializer.data["date_from"]
+            except KeyError:
+                date_from = ""
+            try:
+                date_to = serializer.data["date_to"]
+            except KeyError:
+                date_to = ""
 
-        result = book_search(search=search, date_to=date_to, date_from=date_from, books=books)
-        serializer2 = BookSerializer(result, {"request": request})
+            result = book_search(search=search, date_to=date_to, date_from=date_from, books=books)
+
         if result.exists():
-            return Response(serializer2.data)
+            data = {"books": BookSerializer(result, many=True).data}
+            return Response(data, status=status.HTTP_200_OK)
         else:
             raise Http404
