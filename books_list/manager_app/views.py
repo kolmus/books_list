@@ -94,12 +94,7 @@ class BooksListView(View):
         date_to = request.POST["date_to"]
         books = Book.objects.all().order_by("id")
         if books.exists():
-            result = book_search(
-                search=search, 
-                date_from=date_from, 
-                date_to=date_to, 
-                books=books
-            )
+            result = book_search(search=search, date_from=date_from, date_to=date_to, books=books)
             return render(request, "manager_app/books_list.html", {"books": result})
         else:
             return render(request, "manager_app/books_list.html")
