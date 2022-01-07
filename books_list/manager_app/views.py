@@ -64,6 +64,7 @@ def book_search(books, search="", date_from="", date_to=""):
         result_ids = result_date
     else:  # if no date and no search
         result_ids = []
+    print(type(books))
     result = books.filter(id__in=result_ids)
     return result
 
@@ -93,12 +94,14 @@ class BooksListView(View):
         date_to = request.POST["date_to"]
         books = Book.objects.all().order_by("id")
         if books.exists():
-            result = book_search(search, date_from, date_to, books)
-            # books = Book.objects.filter(title__icontains=search, )
+            result = book_search(
+                search=search, 
+                date_from=date_from, 
+                date_to=date_to, 
+                books=books
+            )
             return render(request, "manager_app/books_list.html", {"books": result})
-        else:  # response = client.get("/books/api/a/1900-01-01/2021-01-07/", {}, format='json')
-            # print(response.content)
-            # assert response.status_code == 200
+        else:
             return render(request, "manager_app/books_list.html")
 
 
@@ -159,8 +162,6 @@ class BookImportView(View):
 
                 list_of_books = []
                 for i in range(len(answer)):
-                    print(i)
-                    print(answer[i]["volumeInfo"])
                     book = {}
                     book["lp"] = i
                     book["title"] = answer[i]["volumeInfo"]["title"]
@@ -173,7 +174,6 @@ class BookImportView(View):
                             book["date_of_publication"] = date_publ
                     except KeyError:
                         pass
-                    print(answer[i]["volumeInfo"]["industryIdentifiers"][0]["identifier"])
                     book["isbn"] = answer[i]["volumeInfo"]["industryIdentifiers"][0]["identifier"]
                     try:
                         book["pages"] = answer[i]["volumeInfo"]["pageCount"]
@@ -232,6 +232,7 @@ class BookSaveView(View):
                 continue
             new_books.append(books[i])
         request.session["imported_books"] = new_books
+        return redirect("/books/import/")
         # @lru_cache to check
 
 
