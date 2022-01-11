@@ -23,6 +23,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    from .local_settings import SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
 try:
@@ -30,7 +32,7 @@ try:
     from .local_settings import ALLOWED_HOSTS
 except ModuleNotFoundError:
     DEBUG = False
-    ALLOWED_HOSTS = ['my-book-list-api.herokuapp.com/',
+    ALLOWED_HOSTS = ['lk-books-list.herokuapp.com/',
         'localhost',
         '127.0.0.1',
         '.herokuapp.com',
