@@ -25,9 +25,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-from .local_settings import DEBUG
-
-from .local_settings import ALLOWED_HOSTS
+try:
+    from .local_settings import DEBUG
+    from .local_settings import ALLOWED_HOSTS
+except ModuleNotFoundError:
+    DEBUG = True
+    ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -77,7 +80,15 @@ WSGI_APPLICATION = "books_list.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-from .local_settings import DATABASES
+try:
+    from .local_settings import DATABASES
+except ModuleNotFoundError:
+    DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'books-list',
+    }
+}
 
 
 # Password validation
