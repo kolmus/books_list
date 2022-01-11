@@ -29,7 +29,7 @@ try:
     from .local_settings import DEBUG
     from .local_settings import ALLOWED_HOSTS
 except ModuleNotFoundError:
-    DEBUG = True
+    DEBUG = False
     ALLOWED_HOSTS = ['my-book-list-api.herokuapp.com/',
         'localhost',
         '127.0.0.1',
