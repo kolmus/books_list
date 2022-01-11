@@ -30,7 +30,7 @@ try:
     from .local_settings import ALLOWED_HOSTS
 except ModuleNotFoundError:
     DEBUG = True
-    ALLOWED_HOSTS = []
+    ALLOWED_HOSTS = ['.herokuapp.com']
 
 
 # Application definition
